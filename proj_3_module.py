@@ -42,15 +42,71 @@ def weighted_die(n):
     
     return gain
 
+def lattice(i,j,lat):
+    sTop = lat[i+1,j]
+    sBot = lat[i-1,j]
+    sLeft = lat[i,j-1]
+    sRight = lat[i,j+1]
+    return sTop, sBot, sLeft, sRight
+def flip(L, lat, temp, H = 0):
 
-def two_dim_ising(L, temp, n):
-    return 0
-probs = np.array([3,3,1,1,1,1])/10
-earnings = np.array([1,1,-1,-1,-1,-1])
+    a = rd.randint(0,L-2)
+    b = rd.randint(0,L-2)
+    
+    
+    mov = np.array(lattice(a,b,lat))
+    delE = 2*lat[a,b]*(np.sum(mov)+H)
+    if (delE <= 0) or (delE>0 and np.random.rand(1)[-1]< np.exp(-delE/temp)):
+        flip = -lat[a,b]
+        lat[a,b] = flip 
+    return np.matrix(lat), flip
+def dele(L, lat, H = 0):
+    # E[-1] + dele(L,lat0)
+    mov = np.array(lattice(a,b,lat))
+    a = rd.randint(0,L-2)
+    b = rd.randint(0,L-2)
+    return 2*lat[a,b]*(np.sum(mov)+H)
+def energy(lat, L, H = 0):
+    e = 0
+    for i in range(L-1):
+        for j in range(L-1):
+            e -= (lat[i,j]*(np.sum(np.array(lattice(i,j,lat)))) + H*np.sum(lat))
+    return e/2
 
-Y = [np.abs(probs @ earnings- np.mean(weighted_die(10**i))) for i in range(1,5)]
-X = [i for i in range(1,5)]
+def two_dim_ising(L, temp, H = 0, n = 100):
+    lat = np.ones((L,L))
+    E = [energy(lat, L, H)]
+    Eq = [energy(lat, L, H)**2]
+    lat0 = lat
+    S = [np.sum(lat)]
+    Sq = [np.sum(lat)**2]
+    ons = S
+    onsq = Sq
+    one = E
+    oneq = Eq
+    for i in range(n):
 
-
+        lat0, dels = flip(L, lat, temp, H)
+        lat1 = lat0
+        # np.sum(lat0)
+        eps = (ons[-1]*i + S[-1])/(i+1)
+        epe = (one[-1]*i + E[-1])/(i+1)
+        epsq = (onsq[-1]*i + Sq[-1])/(i+1)
+        epeq = (oneq[-1]*i + Eq[-1])/(i+1)
+        S.append(S[-1] + 2*dels)
+        E.append(E[-1] + dele(L,lat0))
+        Sq.append(Sq[-1] + 2*dels**2)
+        Eq.append(Eq[-1] + dele(L,lat0)**2)
+        ons.append(eps)
+        one.append(epe)
+        onsq.append(epsq)
+        oneq.append(epeq)
+    
+    N = L**2
+    U = 1/N*epe
+    xi_t = 1/(N*temp)*(epsq-eps**2)
+    M = 1/N*eps
+    C_H = 1/(N*temp**2)*(epeq-epe**2)
+    return lat1, U, xi_t, M, C_H
 
 
