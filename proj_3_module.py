@@ -52,19 +52,27 @@ def flip(L, lat, temp, H = 0):
 
     a = rd.randint(0,L-2)
     b = rd.randint(0,L-2)
-    
+    Flip = 0
     
     mov = np.array(lattice(a,b,lat))
     delE = 2*lat[a,b]*(np.sum(mov)+H)
     if (delE <= 0) or (delE>0 and np.random.rand(1)[-1]< np.exp(-delE/temp)):
-        flip = -lat[a,b]
-        lat[a,b] = flip 
-    return np.matrix(lat), flip
+        Flip = -lat[a,b]
+        lat[a,b] = Flip 
+    return np.matrix(lat), Flip
+
+def onsager(T,Tc):
+  if T >=Tc:
+    return 0
+  else:
+    return (1-np.sinh(2/T)**(-4))**(1/8)
+
 def dele(L, lat, H = 0):
-    # E[-1] + dele(L,lat0)
-    mov = np.array(lattice(a,b,lat))
     a = rd.randint(0,L-2)
     b = rd.randint(0,L-2)
+    # E[-1] + dele(L,lat0)
+    mov = np.array(lattice(a,b,lat))
+
     return 2*lat[a,b]*(np.sum(mov)+H)
 def energy(lat, L, H = 0):
     e = 0
@@ -73,13 +81,13 @@ def energy(lat, L, H = 0):
             e -= (lat[i,j]*(np.sum(np.array(lattice(i,j,lat)))) + H*np.sum(lat))
     return e/2
 
-def two_dim_ising(L, temp, H = 0, n = 100):
+def two_dim_ising(L, temp, H = 0, n = 200):
     lat = np.ones((L,L))
     E = [energy(lat, L, H)]
-    Eq = [energy(lat, L, H)**2]
+    Eq = [E[-1]**2]
     lat0 = lat
     S = [np.sum(lat)]
-    Sq = [np.sum(lat)**2]
+    Sq = [S[-1]**2]
     ons = S
     onsq = Sq
     one = E
@@ -88,25 +96,30 @@ def two_dim_ising(L, temp, H = 0, n = 100):
 
         lat0, dels = flip(L, lat, temp, H)
         lat1 = lat0
-        # np.sum(lat0)
-        eps = (ons[-1]*i + S[-1])/(i+1)
-        epe = (one[-1]*i + E[-1])/(i+1)
-        epsq = (onsq[-1]*i + Sq[-1])/(i+1)
-        epeq = (oneq[-1]*i + Eq[-1])/(i+1)
+        delen = dele(L,lat1)
         S.append(S[-1] + 2*dels)
-        E.append(E[-1] + dele(L,lat0))
-        Sq.append(Sq[-1] + 2*dels**2)
-        Eq.append(Eq[-1] + dele(L,lat0)**2)
+        E.append(E[-1] + delen)
+        Sq.append((Sq[-1]+2*dels)**2)
+        Eq.append((Eq[-1]+delen)**2)
+        eps = (np.mean(ons)*i + S[-1])/(i+1)
+        epe = (np.mean(one)*i + E[-1])/(i+1)  
+        epse = (np.mean(oneq)*i + Eq[-1])/(i+1)
+        epss = (np.mean(onsq)*i + Sq[-1])/(i+1)
         ons.append(eps)
         one.append(epe)
-        onsq.append(epsq)
-        oneq.append(epeq)
+        oneq.append(epse)
+        onsq.append(epss)
+
+
     
     N = L**2
-    U = 1/N*epe
-    xi_t = 1/(N*temp)*(epsq-eps**2)
-    M = 1/N*eps
-    C_H = 1/(N*temp**2)*(epeq-epe**2)
-    return lat1, U, xi_t, M, C_H
+    U = 1/N*one[-1]
+    xi_t = (onsq[-1]-ons[-1]**2)/((N*temp))
+    M = 1/N*ons[-1]
+    C_H = (oneq[-1]-one[-1]**2)/((N*temp**2))
+    return lat1, U, M, n, n/N
+
+
+
 
 
