@@ -117,7 +117,7 @@ def two_dim_ising(L, temp, H = 0, n = 200):
     xi_t = (onsq[-1]-ons[-1]**2)/((N*temp))
     M = 1/N*ons[-1]
     C_H = (oneq[-1]-one[-1]**2)/((N*temp**2))
-    return lat1, U, M, n, n/N
+    return lat1, U, M, n, n/N, xi_t, C_H
 
 
 
