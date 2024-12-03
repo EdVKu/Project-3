@@ -43,23 +43,31 @@ def weighted_die(n):
     return gain
 
 def lattice(i,j,lat):
-    sTop = lat[i+1,j]
-    sBot = lat[i-1,j]
-    sLeft = lat[i,j-1]
-    sRight = lat[i,j+1]
-    return sTop, sBot, sLeft, sRight
-def flip(L, lat, temp, H = 0):
-
-    a = rd.randint(0,L-2)
-    b = rd.randint(0,L-2)
-    Flip = 0
+    L, H = lat.shape
     
-    mov = np.array(lattice(a,b,lat))
-    delE = 2*lat[a,b]*(np.sum(mov)+H)
-    if (delE <= 0) or (delE>0 and np.random.rand(1)[-1]< np.exp(-delE/temp)):
-        Flip = -lat[a,b]
-        lat[a,b] = Flip 
-    return np.matrix(lat), Flip
+    sTop = lat[int((i+1)%(L)),j]
+    sBot = lat[int((i-1)%(L)),j]
+    sLeft = lat[i,int((j-1)%(L))]
+    sRight = lat[i,int((j+1)%(L))]
+    return int(sTop), int(sBot), int(sLeft), int(sRight)
+
+def flip(L, lat, temp, H = 0):
+    Flp = 0
+    for i in range(L):
+        for j in range(L):
+            a = rd.randint(0,L-1)
+            b = rd.randint(0,L-1)
+            Ss = lat[a,b]
+            costo = lat[(a+1)%L,b] + lat[(a-1)%L,b] + lat[a,(b+1)%L] + lat[a,(b-1)%L]
+            delE = 2*Ss*costo
+            if delE <= 0:
+                Ss *= -1
+            elif (delE >0 and np.random.rand(1)[0]<np.exp(-delE/temp)):
+                Ss *= -1
+            lat[a,b] = Ss
+    Flp = Ss
+    return lat, Flp, delE
+
 
 def onsager(T,Tc):
   if T >=Tc:
@@ -67,59 +75,86 @@ def onsager(T,Tc):
   else:
     return (1-np.sinh(2/T)**(-4))**(1/8)
 
-def dele(L, lat, H = 0):
-    a = rd.randint(0,L-2)
-    b = rd.randint(0,L-2)
-    # E[-1] + dele(L,lat0)
-    mov = np.array(lattice(a,b,lat))
-
-    return 2*lat[a,b]*(np.sum(mov)+H)
 def energy(lat, L, H = 0):
     e = 0
     for i in range(L-1):
         for j in range(L-1):
-            e -= (lat[i,j]*(np.sum(np.array(lattice(i,j,lat)))) + H*np.sum(lat))
-    return e/2
+            Ss = lat[i,j]
+            costo = lat[(i+1)%L,j] + lat[(i-1)%L,j] + lat[i,(j+1)%L] + lat[i,(j-1)%L]
+            e -= (Ss*(costo))
+            
+    return e/4
+def sspin(lat):
+    mag = np.sum(lat)
+    return mag
 
 def two_dim_ising(L, temp, H = 0, n = 200):
-    lat = np.ones((L,L))
+    lat = np.ones((L,L))    
     E = [energy(lat, L, H)]
     Eq = [E[-1]**2]
-    lat0 = lat
     S = [np.sum(lat)]
     Sq = [S[-1]**2]
-    ons = S
-    onsq = Sq
-    one = E
-    oneq = Eq
+    emean = np.mean(E)
+    smean = np.mean(S)
+    Sqmean = np.mean(Sq)
+    Eqmean = np.mean(Eq)
+    ons, onsq, one, oneq = 0,0,0,0
     for i in range(n):
-
-        lat0, dels = flip(L, lat, temp, H)
-        lat1 = lat0
-        delen = dele(L,lat1)
-        S.append(S[-1] + 2*dels)
-        E.append(E[-1] + delen)
-        Sq.append((Sq[-1]+2*dels)**2)
-        Eq.append((Eq[-1]+delen)**2)
-        eps = (np.mean(ons)*i + S[-1])/(i+1)
-        epe = (np.mean(one)*i + E[-1])/(i+1)  
-        epse = (np.mean(oneq)*i + Eq[-1])/(i+1)
-        epss = (np.mean(onsq)*i + Sq[-1])/(i+1)
-        ons.append(eps)
-        one.append(epe)
-        oneq.append(epse)
-        onsq.append(epss)
+        lat, dels, delen = flip(L, lat, temp, H)
+        ons = np.sum(lat)
+        onsq = ons**2
+        one = energy(lat, L, H)
+        oneq = one**2
+        S.append(ons)
+        E.append(one)
+        Sq.append(onsq)
+        Eq.append(oneq)
+        eps = (smean * i + ons)/(i+1)
+        epe = (emean * i + one)/(i+1)  
+        epse = (Eqmean * i + oneq)/(i+1)
+        epss = (Sqmean * i + onsq)/(i+1)
+        smean, emean, Eqmean, Sqmean = eps, epe, epse, epss
 
 
-    
+
     N = L**2
-    U = 1/N*one[-1]
-    xi_t = (onsq[-1]-ons[-1]**2)/((N*temp))
-    M = 1/N*ons[-1]
-    C_H = (oneq[-1]-one[-1]**2)/((N*temp**2))
-    return lat1, U, M, n, n/N, xi_t, C_H
+    U = 1/N*epe
+    xi_t = (epss-eps**2)/((N*temp))
+    M = 1/N*eps
+    C_H = (epse-epe**2)/((N*temp**2))
+    
+        
 
 
+    return lat, U, M, xi_t, C_H
+
+#lat, U, M, xi_t, C_H = two_dim_ising(256,3.1)
+M = np.linspace(4,0.01,100)
+print(M)
+    
+"""
+    
+    
+    lat0 = lat
+    
+    
+
+    delen = dele(L,lat)
+    
+    
+    
+    
+    eps = (np.mean(ons) * i + S[-1])/(i+1)
+    epe = (np.mean(one) * i + E[-1])/(i+1)  
+    epse = (np.mean(oneq) * i + Eq[-1])/(i+1)
+    epss = (np.mean(onsq) * i + Sq[-1])/(i+1)
+    ons.append(eps)
+    one.append(epe)
+    oneq.append(epse)
+    onsq.append(epss)
+
+"""
+    
 
 
 
