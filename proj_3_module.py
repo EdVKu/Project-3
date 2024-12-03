@@ -128,9 +128,7 @@ def two_dim_ising(L, temp, H = 0, n = 200):
 
     return lat, U, M, xi_t, C_H
 
-#lat, U, M, xi_t, C_H = two_dim_ising(256,3.1)
-M = np.linspace(4,0.01,100)
-print(M)
+
     
 """
     
