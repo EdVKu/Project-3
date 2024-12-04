@@ -127,32 +127,3 @@ def two_dim_ising(L, temp, H = 0, n = 200):
 
 
     return lat, U, M, xi_t, C_H
-
-
-    
-"""
-    
-    
-    lat0 = lat
-    
-    
-
-    delen = dele(L,lat)
-    
-    
-    
-    
-    eps = (np.mean(ons) * i + S[-1])/(i+1)
-    epe = (np.mean(one) * i + E[-1])/(i+1)  
-    epse = (np.mean(oneq) * i + Eq[-1])/(i+1)
-    epss = (np.mean(onsq) * i + Sq[-1])/(i+1)
-    ons.append(eps)
-    one.append(epe)
-    oneq.append(epse)
-    onsq.append(epss)
-
-"""
-    
-
-
-
